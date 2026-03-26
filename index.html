@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SafeGuard – Women's Safety App</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --pink:    #e91e8c;
+      --pink-dk: #c0166f;
+      --purple:  #6a0572;
+      --bg:      #1a0a2e;
+      --card:    #2a1045;
+      --text:    #f0e6ff;
+      --muted:   #b39dcc;
+      --green:   #00e676;
+      --red:     #ff1744;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 40px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    header h1 {
+      font-size: clamp(1.6rem, 5vw, 2.4rem);
+      color: var(--pink);
+      letter-spacing: 1px;
+    }
+    header p { color: var(--muted); font-size: .9rem; margin-top: 4px; }
+
+    /* ── SOS Button ── */
+    .sos-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    #sosBtn {
+      width: 180px; height: 180px;
+      border-radius: 50%;
+      border: 6px solid var(--pink-dk);
+      background: radial-gradient(circle at 40% 35%, #ff4db8, var(--pink) 55%, var(--pink-dk));
+      color: #fff;
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: 3px;
+      cursor: pointer;
+      box-shadow: 0 0 40px rgba(233,30,140,.6), 0 0 80px rgba(233,30,140,.25);
+      transition: transform .15s, box-shadow .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    #sosBtn:hover  { transform: scale(1.06); box-shadow: 0 0 55px rgba(233,30,140,.8); }
+    #sosBtn:active { transform: scale(.96); }
+    #sosBtn.active {
+      animation: pulse 1.2s infinite;
+      background: radial-gradient(circle at 40% 35%, #ff1744, #c0166f);
+    }
+    @keyframes pulse {
+      0%,100% { box-shadow: 0 0 40px rgba(255,23,68,.7), 0 0 80px rgba(255,23,68,.3); }
+      50%      { box-shadow: 0 0 70px rgba(255,23,68,1),  0 0 120px rgba(255,23,68,.5); }
+    }
+
+    .sos-hint { color: var(--muted); font-size: .82rem; }
+
+    /* ── Status Bar ── */
+    #statusBar {
+      width: 100%; max-width: 480px;
+      background: var(--card);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .status-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: .88rem;
+    }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #555; flex-shrink: 0;
+      transition: background .3s;
+    }
+    .dot.on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot.red { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+
+    #coordsDisplay {
+      font-size: .78rem; color: var(--muted);
+      word-break: break-all;
+    }
+    #coordsDisplay a { color: var(--pink); }
+
+    /* ── Cards ── */
+    .card {
+      width: 100%; max-width: 480px;
+      background: var(--card);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card h2 {
+      font-size: 1rem; color: var(--pink);
+      margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ── Tracking ── */
+    #trackBtn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      border: none;
+      background: var(--purple);
+      color: #fff;
+      font-size: 1rem; font-weight: 700;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    #trackBtn:hover   { background: #8a0a96; }
+    #trackBtn.active  { background: #333; color: var(--muted); }
+
+    /* ── Contacts Form ── */
+    .form-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .form-row input {
+      flex: 1; min-width: 120px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1.5px solid #4a2060;
+      background: #1a0a2e;
+      color: var(--text);
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-row input:focus { border-color: var(--pink); }
+    .form-row input::placeholder { color: #6a4a80; }
+
+    #addContactBtn {
+      width: 100%;
+      padding: 11px;
+      border-radius: 8px;
+      border: none;
+      background: var(--pink);
+      color: #fff;
+      font-size: .95rem; font-weight: 700;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    #addContactBtn:hover { background: var(--pink-dk); }
+
+    /* ── Contact List ── */
+    #contactList { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+    .contact-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1a0a2e;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: .88rem;
+    }
+    .contact-info span { display: block; }
+    .contact-info .c-name  { font-weight: 700; color: var(--text); }
+    .contact-info .c-reach { color: var(--muted); font-size: .78rem; }
+
+    .del-btn {
+      background: none; border: none;
+      color: #ff4d6d; font-size: 1.1rem;
+      cursor: pointer; padding: 4px 8px;
+      border-radius: 6px;
+      transition: background .2s;
+    }
+    .del-btn:hover { background: rgba(255,77,109,.15); }
+
+    .empty-msg { color: var(--muted); font-size: .85rem; text-align: center; padding: 10px 0; }
+
+    /* ── Alert Dispatch Panel ── */
+    #dispatchCard { display: none; }
+    #dispatchCard.on { display: block; }
+
+    #dispatchBanner {
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+      font-size: .95rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    #dispatchBanner.sending  { background: #2a1a00; color: #ffb300; }
+    #dispatchBanner.success  { background: #003320; color: var(--green); }
+    #dispatchBanner.warn     { background: #2a1a00; color: #ffb300; }
+    #dispatchBanner.error    { background: #2a0010; color: var(--red); }
+
+    #dispatchMsg {
+      font-size: .82rem;
+      color: var(--muted);
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #1a0a2e;
+      border-radius: 8px;
+      padding: 10px 12px;
+      line-height: 1.5;
+    }
+
+    #contactDispatchList { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+
+    .dispatch-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #1a0a2e;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: .85rem;
+    }
+    .dispatch-row .d-name  { font-weight: 700; }
+    .dispatch-row .d-reach { color: var(--muted); font-size: .75rem; }
+    .dispatch-status {
+      font-size: .78rem; font-weight: 700;
+      padding: 3px 8px; border-radius: 20px;
+    }
+    .dispatch-status.sending { background: #2a1a00; color: #ffb300; }
+    .dispatch-status.sent    { background: #003320; color: var(--green); }
+    .dispatch-status.failed  { background: #2a0010; color: var(--red); }
+
+    #retryBtn {
+      width: 100%;
+      padding: 11px;
+      border-radius: 8px;
+      border: 2px solid var(--pink);
+      background: transparent;
+      color: var(--pink);
+      font-size: .9rem; font-weight: 700;
+      cursor: pointer;
+      display: none;
+      transition: background .2s, color .2s;
+    }
+    #retryBtn:hover { background: var(--pink); color: #fff; }
+    #retryBtn.show  { display: block; }
+
+    /* ── Alert Log ── */
+    #alertLog { margin-top: 14px; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
+    .log-entry {
+      background: #1a0a2e;
+      border-left: 3px solid var(--pink);
+      border-radius: 0 6px 6px 0;
+      padding: 8px 10px;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .log-entry strong { color: var(--text); }
+
+    /* ── Emergency Overlay ── */
+    #emergencyOverlay {
+      display: none;
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      animation: flashRed 0.6s infinite;
+    }
+    @keyframes flashRed {
+      0%,100% { background: rgba(255,23,68,0); }
+      50%      { background: rgba(255,23,68,.18); }
+    }
+    #emergencyOverlay.on { display: block; }
+
+    /* ── Alarm Card ── */
+    #alarmCard { display: none; }
+    #alarmCard.on { display: block; }
+
+    #alarmBanner {
+      background: var(--red);
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+      animation: flashBanner .7s infinite;
+    }
+    @keyframes flashBanner {
+      0%,100% { opacity: 1; } 50% { opacity: .6; }
+    }
+
+    #stopAlarmBtn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 10px;
+      border: 3px solid var(--red);
+      background: transparent;
+      color: var(--red);
+      font-size: 1rem; font-weight: 800;
+      cursor: pointer;
+      transition: background .2s, color .2s;
+      margin-bottom: 14px;
+    }
+    #stopAlarmBtn:hover { background: var(--red); color: #fff; }
+
+    .alarm-controls {
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .ctrl-row {
+      display: flex; align-items: center; gap: 10px;
+      font-size: .85rem; color: var(--muted);
+    }
+    .ctrl-row label { min-width: 70px; }
+    .ctrl-row input[type=range] {
+      flex: 1; accent-color: var(--pink);
+    }
+    .ctrl-row select {
+      flex: 1;
+      padding: 6px 10px;
+      border-radius: 7px;
+      border: 1.5px solid #4a2060;
+      background: #1a0a2e;
+      color: var(--text);
+      font-size: .85rem;
+      outline: none;
+    }
+    .ctrl-row select:focus { border-color: var(--pink); }
+
+    /* ── Responsive ── */
+    @media (max-width: 400px) {
+      #sosBtn { width: 150px; height: 150px; font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🛡️ SafeGuard</h1>
+  <p>Your personal safety companion</p>
+</header>
+
+<!-- SOS Button -->
+<div class="sos-wrap">
+  <button id="sosBtn" aria-label="Send SOS Alert">SOS</button>
+  <span class="sos-hint">Press &amp; hold for emergency alert</span>
+</div>
+
+<!-- Emergency Flash Overlay -->
+<div id="emergencyOverlay" aria-hidden="true"></div>
+
+<!-- Status Bar -->
+<div id="statusBar">
+  <div class="status-row">
+    <div class="dot" id="alertDot"></div>
+    <span id="alertStatus">No alert sent</span>
+  </div>
+  <div class="status-row">
+    <div class="dot" id="trackDot"></div>
+    <span id="trackStatus">Location sharing inactive</span>
+  </div>
+  <div id="coordsDisplay"></div>
+</div>
+
+<!-- Alarm Card (shown during SOS) -->
+<div class="card" id="alarmCard">
+  <div id="alarmBanner">🚨 Emergency Alert Activated!</div>
+  <button id="stopAlarmBtn">⏹ Stop Alarm</button>
+  <div class="alarm-controls">
+    <div class="ctrl-row">
+      <label for="volumeSlider">Volume</label>
+      <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="0.8" />
+      <span id="volDisplay">80%</span>
+    </div>
+    <div class="ctrl-row">
+      <label for="toneSelect">Tone</label>
+      <select id="toneSelect">
+        <option value="wail">Wailing Siren</option>
+        <option value="beep">Rapid Beep</option>
+        <option value="pulse">Pulse Alarm</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- Alert Dispatch Panel -->
+<div class="card" id="dispatchCard">
+  <h2>📨 Alert Dispatch</h2>
+  <div id="dispatchBanner"></div>
+  <div id="dispatchMsg"></div>
+  <div id="contactDispatchList"></div>
+  <button id="retryBtn">🔄 Retry Failed Alerts</button>
+</div>
+
+<!-- Live Tracking -->
+<div class="card">
+  <h2>📍 Live Location Tracking</h2>
+  <button id="trackBtn">Start Live Tracking</button>
+</div>
+
+<!-- Trusted Contacts -->
+<div class="card">
+  <h2>👥 Trusted Contacts</h2>
+  <div class="form-row">
+    <input type="text"  id="contactName"  placeholder="Name" />
+    <input type="text"  id="contactReach" placeholder="Phone or Email" />
+  </div>
+  <button id="addContactBtn">+ Add Contact</button>
+  <div id="contactList"></div>
+</div>
+
+<!-- Alert Log -->
+<div class="card">
+  <h2>📋 Alert Log</h2>
+  <div id="alertLog"><p class="empty-msg">No alerts sent yet.</p></div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────
+  let trackingId   = null;
+  let lastCoords   = null;
+  let alertActive  = false;
+  let holdTimer    = null;
+
+  const HOLD_MS = 800; // hold duration to trigger SOS
+
+  // ── DOM refs ───────────────────────────────────────────
+  const sosBtn       = document.getElementById('sosBtn');
+  const trackBtn     = document.getElementById('trackBtn');
+  const addContactBtn= document.getElementById('addContactBtn');
+  const alertDot     = document.getElementById('alertDot');
+  const trackDot     = document.getElementById('trackDot');
+  const alertStatus  = document.getElementById('alertStatus');
+  const trackStatus  = document.getElementById('trackStatus');
+  const coordsDisplay= document.getElementById('coordsDisplay');
+  const contactList  = document.getElementById('contactList');
+  const alertLog     = document.getElementById('alertLog');
+  const nameInput    = document.getElementById('contactName');
+  const reachInput   = document.getElementById('contactReach');
+
+  // ── Contacts (localStorage) ────────────────────────────
+  function getContacts() {
+    return JSON.parse(localStorage.getItem('sg_contacts') || '[]');
+  }
+  function saveContacts(arr) {
+    localStorage.setItem('sg_contacts', JSON.stringify(arr));
+  }
+
+  function renderContacts() {
+    const contacts = getContacts();
+    if (!contacts.length) {
+      contactList.innerHTML = '<p class="empty-msg">No contacts added yet.</p>';
+      return;
+    }
+    contactList.innerHTML = contacts.map((c, i) => `
+      <div class="contact-item">
+        <div class="contact-info">
+          <span class="c-name">${escHtml(c.name)}</span>
+          <span class="c-reach">${escHtml(c.reach)}</span>
+        </div>
+        <button class="del-btn" onclick="deleteContact(${i})" aria-label="Remove ${escHtml(c.name)}">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function deleteContact(i) {
+    const contacts = getContacts();
+    contacts.splice(i, 1);
+    saveContacts(contacts);
+    renderContacts();
+  }
+
+  addContactBtn.addEventListener('click', () => {
+    const name  = nameInput.value.trim();
+    const reach = reachInput.value.trim();
+    if (!name || !reach) { flashInput(!name ? nameInput : reachInput); return; }
+    const contacts = getContacts();
+    contacts.push({ name, reach });
+    saveContacts(contacts);
+    nameInput.value = reachInput.value = '';
+    renderContacts();
+    logAlert(`Contact added: ${name} (${reach})`);
+  });
+
+  function flashInput(el) {
+    el.style.borderColor = 'var(--red)';
+    setTimeout(() => el.style.borderColor = '', 1000);
+  }
+
+  // ── Geolocation helpers ────────────────────────────────
+  function updateCoordsUI(lat, lon) {
+    lastCoords = { lat, lon };
+    const link = `https://www.google.com/maps?q=${lat},${lon}`;
+    coordsDisplay.innerHTML =
+      `📌 Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)} — <a href="${link}" target="_blank" rel="noopener">Open Map</a>`;
+  }
+
+  // ── Alert Dispatch ────────────────────────────────────
+  const dispatchCard        = document.getElementById('dispatchCard');
+  const dispatchBanner      = document.getElementById('dispatchBanner');
+  const dispatchMsg         = document.getElementById('dispatchMsg');
+  const contactDispatchList = document.getElementById('contactDispatchList');
+  const retryBtn            = document.getElementById('retryBtn');
+
+  let lastDispatchData = null; // { contacts, message } for retry
+
+  function buildAlertMessage(lat, lon) {
+    const link = `https://www.google.com/maps?q=${lat},${lon}`;
+    return `🚨 Emergency Alert!\nI need help. My current location:\n${link}\nPlease reach me immediately.`;
+  }
+
+  function showDispatchPanel(contacts, message, state) {
+    dispatchCard.classList.add('on');
+    dispatchBanner.className = 'dispatch-status ' + state;
+
+    if (state === 'sending') {
+      dispatchBanner.className = 'dispatch-status sending';
+      dispatchBanner.textContent = '⏳ Sending alerts to contacts…';
+    }
+    dispatchMsg.textContent = message;
+
+    contactDispatchList.innerHTML = contacts.map((c, i) => `
+      <div class="dispatch-row" id="drow-${i}">
+        <div>
+          <div class="d-name">${escHtml(c.name)}</div>
+          <div class="d-reach">${escHtml(c.reach)}</div>
+        </div>
+        <span class="dispatch-status sending" id="dstatus-${i}">Sending…</span>
+      </div>
+    `).join('');
+
+    retryBtn.classList.remove('show');
+  }
+
+  // Simulates async send per contact (200–800ms delay)
+  function simulateContactSend(contact, index) {
+    return new Promise(resolve => {
+      const delay = 200 + Math.random() * 600;
+      setTimeout(() => {
+        // 90% success rate simulation
+        const ok = Math.random() > 0.1;
+        const el = document.getElementById(`dstatus-${index}`);
+        if (el) {
+          el.textContent = ok ? '✅ Sent' : '❌ Failed';
+          el.className   = 'dispatch-status ' + (ok ? 'sent' : 'failed');
+        }
+        console.log(`[SafeGuard] Alert ${ok ? 'sent to' : 'FAILED for'} ${contact.name} (${contact.reach})`);
+        resolve({ contact, ok });
+      }, delay);
+    });
+  }
+
+  async function dispatchAlerts(contacts, message) {
+    lastDispatchData = { contacts, message };
+    showDispatchPanel(contacts, message, 'sending');
+
+    const results = await Promise.all(
+      contacts.map((c, i) => simulateContactSend(c, i))
+    );
+
+    const failed  = results.filter(r => !r.ok);
+    const success = results.filter(r =>  r.ok);
+    const time    = new Date().toLocaleTimeString();
+
+    if (failed.length === 0) {
+      dispatchBanner.className = 'dispatch-status success';
+      dispatchBanner.textContent = `✅ Alert sent to all ${contacts.length} trusted contact${contacts.length > 1 ? 's' : ''}!`;
+      logAlert(`✅ Alert sent to all contacts at ${time}`);
+    } else {
+      dispatchBanner.className = 'dispatch-status warn';
+      dispatchBanner.textContent = `⚠️ Sent to ${success.length}/${contacts.length} contacts. ${failed.length} failed.`;
+      retryBtn.classList.add('show');
+      logAlert(`⚠️ Alert partially sent (${failed.length} failed) at ${time}`);
+    }
+  }
+
+  retryBtn.addEventListener('click', () => {
+    if (!lastDispatchData) return;
+    const { contacts, message } = lastDispatchData;
+    // Only retry failed ones
+    const failedContacts = contacts.filter((_, i) => {
+      const el = document.getElementById(`dstatus-${i}`);
+      return el && el.textContent.includes('Failed');
+    });
+    if (failedContacts.length) dispatchAlerts(failedContacts, message);
+  });
+
+  // ── SOS ───────────────────────────────────────────────
+  function triggerSOS() {
+    alertActive = true;
+    sosBtn.classList.add('active');
+    alertDot.classList.add('red');
+    alertStatus.textContent = '🚨 Alert Sent!';
+    startSiren();
+
+    const contacts = getContacts();
+
+    if (!navigator.geolocation) {
+      // No geolocation — still alert contacts without location
+      const message = '🚨 Emergency Alert!\nI need help. Location unavailable.\nPlease reach me immediately.';
+      logAlert('⚠️ Geolocation not supported — sending without location.');
+      if (contacts.length) {
+        dispatchAlerts(contacts, message);
+      } else {
+        showNoContactsWarning();
+      }
+      return;
+    }
+
+    if (!contacts.length) {
+      showNoContactsWarning();
+    }
+
+    // Show sending state immediately, get location in parallel
+    if (contacts.length) {
+      dispatchCard.classList.add('on');
+      dispatchBanner.className = 'dispatch-status sending';
+      dispatchBanner.textContent = '📍 Getting your location…';
+      dispatchMsg.textContent = '';
+      contactDispatchList.innerHTML = '';
+      retryBtn.classList.remove('show');
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const { latitude: lat, longitude: lon } = pos.coords;
+        updateCoordsUI(lat, lon);
+        const message = buildAlertMessage(lat, lon);
+        if (contacts.length) {
+          dispatchAlerts(contacts, message);
+        }
+        if (!trackingId) startTracking();
+      },
+      err => {
+        const message = '🚨 Emergency Alert!\nI need help. Location unavailable.\nPlease reach me immediately.';
+        logAlert('⚠️ Location error: ' + err.message);
+        dispatchBanner.className = 'dispatch-status error';
+        dispatchBanner.textContent = '❌ Could not get location — sending without it.';
+        if (contacts.length) dispatchAlerts(contacts, message);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  function showNoContactsWarning() {
+    dispatchCard.classList.add('on');
+    dispatchBanner.className = 'dispatch-status warn';
+    dispatchBanner.textContent = '⚠️ No trusted contacts saved!';
+    dispatchMsg.textContent = 'Add contacts in the Trusted Contacts section so alerts can be sent.';
+    contactDispatchList.innerHTML = '';
+    retryBtn.classList.remove('show');
+    logAlert('⚠️ SOS triggered but no contacts saved.');
+  }
+
+  function resetSOS() {
+    alertActive = false;
+    sosBtn.classList.remove('active');
+    alertDot.classList.remove('red');
+    alertStatus.textContent = 'No alert sent';
+    stopSiren();
+  }
+
+  // Hold-to-trigger SOS (prevents accidental taps)
+  sosBtn.addEventListener('pointerdown', () => {
+    holdTimer = setTimeout(triggerSOS, HOLD_MS);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev =>
+    sosBtn.addEventListener(ev, () => clearTimeout(holdTimer))
+  );
+  sosBtn.addEventListener('click', () => {
+    if (!alertActive) triggerSOS();
+    else resetSOS();
+  });
+
+  // ── Live Tracking ──────────────────────────────────────
+  function startTracking() {
+    if (!navigator.geolocation) {
+      logAlert('⚠️ Geolocation not supported by this browser.');
+      return;
+    }
+    trackingId = navigator.geolocation.watchPosition(
+      pos => {
+        const { latitude: lat, longitude: lon } = pos.coords;
+        updateCoordsUI(lat, lon);
+        console.log(`[SafeGuard] Location update → ${lat.toFixed(6)}, ${lon.toFixed(6)}`);
+      },
+      err => logAlert('⚠️ Tracking error: ' + err.message),
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+    );
+    trackDot.classList.add('on');
+    trackStatus.textContent = 'Location sharing active';
+    trackBtn.textContent = 'Stop Live Tracking';
+    trackBtn.classList.add('active');
+    logAlert('📍 Live tracking started.');
+  }
+
+  function stopTracking() {
+    if (trackingId !== null) {
+      navigator.geolocation.clearWatch(trackingId);
+      trackingId = null;
+    }
+    trackDot.classList.remove('on');
+    trackStatus.textContent = 'Location sharing inactive';
+    coordsDisplay.innerHTML = '';
+    trackBtn.textContent = 'Start Live Tracking';
+    trackBtn.classList.remove('active');
+    logAlert('⏹ Live tracking stopped.');
+  }
+
+  trackBtn.addEventListener('click', () => {
+    trackingId === null ? startTracking() : stopTracking();
+  });
+
+  // ── Log helper ────────────────────────────────────────
+  function logAlert(msg) {
+    const emptyMsg = alertLog.querySelector('.empty-msg');
+    if (emptyMsg) emptyMsg.remove();
+
+    const time = new Date().toLocaleTimeString();
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `<strong>${time}</strong> — ${escHtml(msg)}`;
+    alertLog.prepend(entry);
+  }
+
+  // ── Siren (Web Audio API) ─────────────────────────────
+  let audioCtx      = null;
+  let sirenNodes    = [];   // active oscillator + gain nodes
+  let sirenInterval = null;
+  let sirenRunning  = false;
+
+  const overlay     = document.getElementById('emergencyOverlay');
+  const alarmCard   = document.getElementById('alarmCard');
+  const stopAlarmBtn= document.getElementById('stopAlarmBtn');
+  const volumeSlider= document.getElementById('volumeSlider');
+  const volDisplay  = document.getElementById('volDisplay');
+  const toneSelect  = document.getElementById('toneSelect');
+
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  // Master gain (volume control)
+  let masterGain = null;
+  function getMasterGain() {
+    const ctx = getAudioCtx();
+    if (!masterGain) {
+      masterGain = ctx.createGain();
+      masterGain.connect(ctx.destination);
+    }
+    masterGain.gain.value = parseFloat(volumeSlider.value);
+    return masterGain;
+  }
+
+  function stopSirenNodes() {
+    sirenNodes.forEach(n => { try { n.stop(); } catch(_){} });
+    sirenNodes = [];
+    if (sirenInterval) { clearInterval(sirenInterval); sirenInterval = null; }
+  }
+
+  // ── Tone generators ──────────────────────────────────
+  function playWail() {
+    const ctx = getAudioCtx();
+    const mg  = getMasterGain();
+    let up = true;
+    const osc = ctx.createOscillator();
+    const g   = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.value = 600;
+    g.gain.value = 0.6;
+    osc.connect(g); g.connect(mg);
+    osc.start();
+    sirenNodes.push(osc);
+    sirenInterval = setInterval(() => {
+      const now = ctx.currentTime;
+      osc.frequency.cancelScheduledValues(now);
+      osc.frequency.setValueAtTime(osc.frequency.value, now);
+      osc.frequency.linearRampToValueAtTime(up ? 1200 : 600, now + 0.6);
+      up = !up;
+    }, 600);
+  }
+
+  function playBeep() {
+    const ctx = getAudioCtx();
+    const mg  = getMasterGain();
+    let on = false;
+    sirenInterval = setInterval(() => {
+      if (on) return (on = false);
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = 1000;
+      g.gain.setValueAtTime(0.5, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      osc.connect(g); g.connect(mg);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.18);
+      on = true;
+    }, 220);
+  }
+
+  function playPulse() {
+    const ctx = getAudioCtx();
+    const mg  = getMasterGain();
+    sirenInterval = setInterval(() => {
+      const osc = ctx.createOscillator();
+      const g   = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 880;
+      g.gain.setValueAtTime(0.7, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+      osc.connect(g); g.connect(mg);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    }, 500);
+  }
+
+  function startSiren() {
+    if (sirenRunning) return;
+    sirenRunning = true;
+    stopSirenNodes();
+    const tone = toneSelect.value;
+    if (tone === 'wail')  playWail();
+    else if (tone === 'beep') playBeep();
+    else playPulse();
+
+    // Vibration API
+    if (navigator.vibrate) navigator.vibrate([300, 100, 300, 100, 300]);
+
+    overlay.classList.add('on');
+    alarmCard.classList.add('on');
+    logAlert('🔊 Emergency siren activated.');
+  }
+
+  function stopSiren() {
+    sirenRunning = false;
+    stopSirenNodes();
+    if (navigator.vibrate) navigator.vibrate(0);
+    overlay.classList.remove('on');
+    alarmCard.classList.remove('on');
+    logAlert('🔇 Siren stopped.');
+  }
+
+  stopAlarmBtn.addEventListener('click', stopSiren);
+
+  volumeSlider.addEventListener('input', () => {
+    const v = parseFloat(volumeSlider.value);
+    volDisplay.textContent = Math.round(v * 100) + '%';
+    if (masterGain) masterGain.gain.value = v;
+  });
+
+  toneSelect.addEventListener('change', () => {
+    if (sirenRunning) { stopSirenNodes(); sirenRunning = false; startSiren(); }
+  });
+
+  // ── Utils ──────────────────────────────────────────────
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Init ───────────────────────────────────────────────
+  renderContacts();
+</script>
+</body>
+</html>
